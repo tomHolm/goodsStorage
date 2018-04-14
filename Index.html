@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Товары</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="app" onload="loadGoods">
+    <div v-if="goods.length > 0">
+        <button id="prvBtn" v-on:click="prevPage" >Previous page</button>
+        <span>Page {{page}} of {{pagesCount}}</span>
+        <button id="nxtBtn" v-on:click="nextPage">Next page</button>
+    </div>
+    <div v-else>
+        <h2>{{emptyMessage}}</h2>
+    </div>
+    <table>
+        <tr v-if="goods.length > 0">
+            <td>Name</td>
+            <td>Description</td>
+            <td>Price</td>
+        </tr>
+        <tr v-for="item in goods">
+            <td>{{item.name}}</td>
+            <td>{{item.description}}</td>
+            <td>{{item.price}}</td>
+        </tr>
+    </table>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
