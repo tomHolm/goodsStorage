@@ -3,31 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <title>Товары</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 </head>
 <body>
 <div id="app" onload="loadGoods">
-    <div v-if="goods.length > 0">
-        <button id="prvBtn" v-on:click="prevPage" >Previous page</button>
-        <span>Page {{page}} of {{pagesCount}}</span>
-        <button id="nxtBtn" v-on:click="nextPage">Next page</button>
+    <div style="width:70%; margin-left:15%; margin-right:15%;" v-if="goods.length > 0">
+        <table class="table table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th scope="col">Image</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="item in goods">
+                    <td><img v-bind:src="item.image_url" class="figure-img img-fluid rounded"/></td>
+                    <td>{{item.name}}</td>
+                    <td>{{item.description}}</td>
+                    <td>{{item.price}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="navdiv" class="d-flex justify-content-center">
+            <button id="prvBtn" v-bind:disabled="currentPage <= 1" v-on:click="loadGoods(Number(currentPage)-1)" class="btn btn-default"> <b> < </b> </button>
+            <span style="margin: 10px;">Page {{currentPage}} of {{pagesCount}}</span>
+            <button id="nxtBtn" v-bind:disabled="currentPage >= pagesCount" v-on:click="loadGoods(Number(currentPage)+1)" class="btn btn-default"> <b> > </b> </button>
+        </div>
     </div>
-    <div v-else>
+    <div v-if="navHidden">
         <h2>{{emptyMessage}}</h2>
     </div>
-    <table>
-        <tr v-if="goods.length > 0">
-            <td>Name</td>
-            <td>Description</td>
-            <td>Price</td>
-        </tr>
-        <tr v-for="item in goods">
-            <td>{{item.name}}</td>
-            <td>{{item.description}}</td>
-            <td>{{item.price}}</td>
-        </tr>
-    </table>
 </div>
 <script src="app.js"></script>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 </body>
 </html>

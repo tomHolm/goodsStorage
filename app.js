@@ -3,41 +3,39 @@ var app = new Vue({
     data: {
         apiUrl: "http://localhost/storage.php",
         emptyMessage: "Loading...",
-        page: 1,
+        currentPage: 1,
         pagesCount: 1,
-        goods: []
+        goods: [],
+        navHidden: true
     },
     methods: {
-        loadGoods: function () {
-            request = new XMLHttpRequest();
-            request.open("GET", this.apiUrl+"?command=getitems&page="+this.page, true);
-
+        loadGoods: function (page) {
+            var request = new XMLHttpRequest();
+            request.open("GET", this.apiUrl+"?command=getitems&page="+page, true);
             request.onreadystatechange = function () {
                 if (this.readyState === 4 && this.status === 200) {
                     var response = JSON.parse(this.responseText);
                     app.goods = response.goods;
-                    app.emptyMessage = app.goods.length > 0 ? "Loading..." : "Nothing to display";
-                    app.pagesCount = response.pagesCount;
-                    if (app.pagesCount < app.page) {
-                        app.page = app.pagesCount;
-                    }
-                    document.getElementById("prvBtn").disabled = app.page <= 1;
-                    document.getElementById("nxtBtn").disabled = app.page >= app.pagesCount;
+                    app.navHidden = !(app.goods.length > 0);
+                    app.currentPage = response.page;
                 }
-            }
-
+            };
             request.send();
         },
-        nextPage: function () {
-            this.page++;
-            this.loadGoods();
-        },
-        prevPage: function () {
-            this.page--;
-            this.loadGoods();
+        getPagesCount: function () {
+            var request = new XMLHttpRequest();
+            request.open("GET", this.apiUrl+"?command=getpagescount", true);
+            request.onreadystatechange = function () {
+                if (this.readyState === 4 && this.status === 200) {
+                    var response = JSON.parse(this.responseText);
+                    app.pagesCount = response.pagesCount;
+                }
+            };
+            request.send();
         }
     },
     mounted: function () {
-        this.loadGoods();
+        this.getPagesCount();
+        this.loadGoods(this.currentPage);
     }
 })
