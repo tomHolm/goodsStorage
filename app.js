@@ -1,7 +1,7 @@
 var app = new Vue({
     el: '#app',
     data: {
-        apiUrl: "http://localhost/storage.php",
+        apiUrl: "http://localhost/storage.php", // адрес API
         emptyMessage: "Loading...",
         currentPage: 1,
         pagesCount: 1,
