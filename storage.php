@@ -7,7 +7,7 @@ $currentPage = !empty($_GET['page']) ? $_GET['page'] : 1;
 $command = !empty($_GET['command']) ? $_GET['command'] : '';
 $count = !empty($_GET['count']) ? $_GET['count'] : 1;
 const TTL = 600;
-const IMG_PATH = 'C:/Apache24/htdocs';
+// TODO set all params to config
 
 $mcache = new Memcache();
 $mcache->addServer('localhost', 11211);
@@ -21,11 +21,16 @@ function getConnection() {
     );
 };
 
-function getPagesCount($size) {
+function getGoodsCount() {
     $mysqli = getConnection();
     $cursor = $mysqli->query('select count(*) as count from goods');
     $countRow = $cursor->fetch_assoc();
-    echo json_encode(['pagesCount' => ceil((int)$countRow['count']/$size)]);
+    return (int)$countRow['count'];
+}
+
+function getPagesCount($size) {
+
+    echo json_encode(['pagesCount' => ceil(getGoodsCount()/$size)]);
 }
 
 function getGoods($page, $size, Memcache $mcache) {
@@ -48,25 +53,33 @@ function getGoods($page, $size, Memcache $mcache) {
         ]);
         $mcache->set('page'.$page, $result, 0, TTL);
     }
-    return $result;
+    echo $result;
 }
 
 function removeGood() {
-    // TODO realize removing
+    $offset = mt_rand(1, getGoodsCount());
+    $mysqli = getConnection();
+    $cursor = $mysqli->query("select id from vktest.goods limit $offset, 1;");
+    $offId = $cursor->fetch_assoc()['id'];
+    $mysqli->query("delete from vktest.goods where id = $offId");
+    if (!empty($mysqli->error)) {
+        throw new \Exception(sprintf('Error occurred while removing row: %s - %s', $mysqli->errno, $mysqli->error));
+    }
+    $mysqli->commit();
 }
 
 function addGood() {
     $nameRandom = mt_rand(1, 10000);
     $descRandom = mt_rand(1, 10000);
     $priceRandom = mt_rand(1, 10000);
-    $imgName = 'images/'.implode('-',['img',$nameRandom,$descRandom,$priceRandom]).'.png';
+    $imgName = 'images/'.implode('-', ['img', $nameRandom, $descRandom, $priceRandom]).'.png';
 
-    if (!file_exists(IMG_PATH.'/'.$imgName)) {
+    if (!file_exists(__DIR__.'/'.$imgName)) {
         $height = 32;
         $width = 32;
         $img = imagecreate($width, $height);
         imagecolorallocate($img, mt_rand(0, 255), mt_rand(0, 255), mt_rand(0, 255));
-        imagepng($img, IMG_PATH.'/'.$imgName);
+        imagepng($img, __DIR__.'/'.$imgName);
     }
 
     $mysqli = getConnection();
@@ -74,25 +87,29 @@ function addGood() {
     $sql .= implode(',', ["'name$nameRandom'", "'desc$descRandom'", round(($priceRandom/3), 2), "'$imgName'"]);
     $sql .= ')';
     $mysqli->query($sql);
+    if (!empty($mysqli->error)) {
+        throw new \Exception(sprintf('Error occurred while adding new row: %s - %s', $mysqli->errno, $mysqli->error));
+    }
     $mysqli->commit();
 }
-
-switch ($command) {
-    case 'getpagescount':
-        getPagesCount($pagesSize);
-        break;
-    case 'add':
-    case 'remove':
-        $mcache->flush();
-        $method = $command . 'Good';
-        for ($i = 0; $i < $count; $i++) {
-            $method();
-        }
-    default:
-        $result = getGoods($currentPage, $pagesSize, $mcache);
-        $time = microtime(true) - $start;
-        $data = json_decode($result, true);
-        $data['time'] = $time;
-        $result = json_encode($data);
-        echo $result;
+try {
+    switch ($command) {
+        case 'getpagescount':
+            getPagesCount($pagesSize);
+            break;
+        case 'add':
+        case 'remove':
+            $mcache->flush();
+            $method = $command . 'Good';
+            for ($i = 0; $i < $count; $i++) {
+                $method();
+            }
+        default:
+            getGoods($currentPage, $pagesSize, $mcache);
+    }
+}
+catch (\Exception $e) {
+    echo json_encode([
+        'errorMsg' => $e->getMessage()
+    ]);
 }

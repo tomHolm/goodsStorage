@@ -9,19 +9,6 @@ var app = new Vue({
         navHidden: true
     },
     methods: {
-        loadGoods: function (page) {
-            var request = new XMLHttpRequest();
-            request.open("GET", this.apiUrl+"?command=getitems&page="+page, true);
-            request.onreadystatechange = function () {
-                if (this.readyState === 4 && this.status === 200) {
-                    var response = JSON.parse(this.responseText);
-                    app.goods = response.goods;
-                    app.navHidden = !(app.goods.length > 0);
-                    app.currentPage = response.page;
-                }
-            };
-            request.send();
-        },
         getPagesCount: function () {
             var request = new XMLHttpRequest();
             request.open("GET", this.apiUrl+"?command=getpagescount", true);
@@ -32,6 +19,32 @@ var app = new Vue({
                 }
             };
             request.send();
+        },
+        executeCommand: function (command, page) {
+            var request = new XMLHttpRequest();
+            request.open("GET", this.apiUrl+"?command="+command+"&page="+page, true);
+            request.onreadystatechange = function () {
+                if (this.readyState === 4 && this.status === 200) {
+                    var response = JSON.parse(this.responseText);
+                    if (response.errorMsg) {
+                        alert(response.errorMsg);
+                    } else {
+                        app.goods = response.goods;
+                        app.navHidden = !(app.goods.length > 0);
+                        app.currentPage = response.page;
+                    }
+                }
+            };
+            request.send();
+        },
+        loadGoods: function (page) {
+            this.executeCommand('getitems', page);
+        },
+        addGood: function () {
+            this.executeCommand('add', this.currentPage);
+        },
+        removeGood: function () {
+            this.executeCommand('remove', this.currentPage);
         }
     },
     mounted: function () {
