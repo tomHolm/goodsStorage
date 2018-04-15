@@ -1,5 +1,6 @@
 <?php
 header('Content-type: application/json; charset=UTF-8');
+header('Access-Control-Allow-Origin: *');
 require_once 'config.php';
 
 $currentPage = !empty($_GET['page']) ? $_GET['page'] : 1;
@@ -32,7 +33,7 @@ function getGoodsCount() {
 
 function getPagesCount() {
 
-    echo json_encode(['pagesCount' => ceil(getGoodsCount()/Config::PAGE_SIZE)]);
+    return ceil(getGoodsCount()/Config::PAGE_SIZE);
 }
 
 function getGoods($page, Memcached $mcache) {
@@ -41,7 +42,7 @@ function getGoods($page, Memcached $mcache) {
         $mysqli = getConnection();
 
         $offset = ($page - 1) * Config::PAGE_SIZE;
-        $cursor = $mysqli->query('select * from vktest.goods g join (select id from vktest.goods order by id DESC limit '.$offset.', '.Config::PAGE_SIZE.') gj on gj.id = g.id');
+        $cursor = $mysqli->query('select * from goods g join (select id from goods order by id DESC limit '.$offset.', '.Config::PAGE_SIZE.') gj on gj.id = g.id');
 
         $goods = [];
         if ($cursor !== false) {
@@ -51,7 +52,8 @@ function getGoods($page, Memcached $mcache) {
         }
         $result = json_encode([
             'page' => $page,
-            'goods' => $goods
+            'goods' => $goods,
+            'pagesCount' => getPagesCount()
         ]);
         $mcache->set('page'.$page, $result, Config::MCACHED_TTL);
     }
@@ -59,11 +61,11 @@ function getGoods($page, Memcached $mcache) {
 }
 
 function removeGood() {
-    $offset = mt_rand(1, getGoodsCount());
+    $offset = mt_rand(0, getGoodsCount() - 1);
     $mysqli = getConnection();
-    $cursor = $mysqli->query("select id from vktest.goods limit $offset, 1;");
+    $cursor = $mysqli->query("select id from goods limit $offset, 1;");
     $offId = $cursor->fetch_assoc()['id'];
-    $mysqli->query("delete from vktest.goods where id = $offId");
+    $mysqli->query("delete from goods where id = $offId");
     if (!empty($mysqli->error)) {
         throw new \Exception(sprintf('Error occurred while removing row: %s - %s', $mysqli->errno, $mysqli->error));
     }
@@ -96,8 +98,8 @@ function addGood() {
 }
 try {
     switch ($command) {
-        case 'getpagescount':
-            getPagesCount();
+        case 'flush':
+            $mcache->flush();
             break;
         case 'add':
         case 'remove':

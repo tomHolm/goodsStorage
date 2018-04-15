@@ -1,25 +1,12 @@
 var app = new Vue({
     el: '#app',
     data: {
-        apiUrl: "http://localhost/storage.php", // адрес API
-        emptyMessage: "Loading...",
+        apiUrl: window.location.protocol+"//"+window.location.host+"/storage.php", // адрес API
         currentPage: 1,
         pagesCount: 1,
-        goods: [],
-        navHidden: true
+        goods: []
     },
     methods: {
-        getPagesCount: function () {
-            var request = new XMLHttpRequest();
-            request.open("GET", this.apiUrl+"?command=getpagescount", true);
-            request.onreadystatechange = function () {
-                if (this.readyState === 4 && this.status === 200) {
-                    var response = JSON.parse(this.responseText);
-                    app.pagesCount = response.pagesCount;
-                }
-            };
-            request.send();
-        },
         executeCommand: function (command, page) {
             var request = new XMLHttpRequest();
             request.open("GET", this.apiUrl+"?command="+command+"&page="+page, true);
@@ -30,8 +17,8 @@ var app = new Vue({
                         alert(response.errorMsg);
                     } else {
                         app.goods = response.goods;
-                        app.navHidden = !(app.goods.length > 0);
                         app.currentPage = response.page;
+                        app.pagesCount = response.pagesCount;
                     }
                 }
             };
@@ -48,7 +35,6 @@ var app = new Vue({
         }
     },
     mounted: function () {
-        this.getPagesCount();
         this.loadGoods(this.currentPage);
     }
 })
