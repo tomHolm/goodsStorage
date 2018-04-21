@@ -10,7 +10,7 @@ $currentPage = !empty($_GET['page']) ? $_GET['page'] : 1;
 $command = !empty($_GET['command']) ? $_GET['command'] : '';
 $count = !empty($_GET['count']) ? $_GET['count'] : 1;
 
-$mcache = new Memcached();
+$mcache = new Memcache();
 $mcache->addServer(Config::MCACHED_HOST, Config::MCACHED_PORT);
 
 function getConnection() {
@@ -28,7 +28,7 @@ function getConnection() {
 
 // Инициализация данных, разбиение списка первичных ключей на части
 
-function updateCache(Memcached $mcache)
+function updateCache(Memcache $mcache)
 {
     $res = [];
     $goodsCount = getGoodsCount();
@@ -47,7 +47,7 @@ function updateCache(Memcached $mcache)
             $key = Config::PRIMARY_LIST_KEY.$cnt;
             $res[$key]['startIdx'] = $pIds[0];
             $res[$key]['count'] = count($pIds);
-            $mcache->set(Config::PRIMARY_LIST_KEY.$cnt, $pIds);
+            $mcache->set(Config::PRIMARY_LIST_KEY.$cnt, $pIds, MEMCACHE_COMPRESSED);
             $mcache->increment(Config::PRIMARY_LIST_COUNT_KEY);
         }
     }
@@ -67,7 +67,7 @@ function getGoodsCount()
     return (int)$cursor->fetch_assoc()['count'];
 }
 
-function getItem($id, Memcached $mcache, &$result) {
+function getItem($id, Memcache $mcache, &$result) {
     if (($item = $mcache->get('item'.$id)) === false) {
         $cursor = getConnection()->query('select * from goods where id = '.$id);
         if (!empty($cursor)) {
@@ -78,7 +78,7 @@ function getItem($id, Memcached $mcache, &$result) {
     $result[] = $item;
 }
 
-function getGoods($page, Memcached $mcache) {
+function getGoods($page, Memcache $mcache) {
     $pIds = $mcache->get(Config::PRIMARY_LIST_KEY.getIdPartByPage($page));
     $goods = [];
     if ($pIds !== false) {
@@ -103,7 +103,7 @@ function getGoods($page, Memcached $mcache) {
 
 // Удаление элемента
 
-function removeIdFromList(Memcached $mcache, $part, $removeIdx) {
+function removeIdFromList(Memcache $mcache, $part, $removeIdx) {
     $partsCount = $mcache->get(Config::PRIMARY_LIST_COUNT_KEY);
     $newElem = false;
     for ($i = $partsCount-1; $i >= $part; $i--) {
@@ -126,7 +126,7 @@ function removeIdFromList(Memcached $mcache, $part, $removeIdx) {
     }
 }
 
-function removeGood(Memcached $mcache) {
+function removeGood(Memcache $mcache) {
     $removePos = mt_rand(0, $mcache->get(Config::ITEMS_COUNT_KEY));
     $removePart = floor($removePos/Config::PRIMARY_ID_PART_SIZE);
     $removePos = $removePos % Config::PRIMARY_ID_PART_SIZE;
@@ -141,9 +141,6 @@ function removeGood(Memcached $mcache) {
             $mysqli = getConnection();
             $mysqli->query('delete from goods where id = ' . $id);
             $mysqli->commit();
-            $item = $mcache->get('item' . $id);
-            $path = __DIR__ . '/' . $item['image_url'];
-            unlink($path);
             $mcache->delete('item' . $id);
         }
         $counter++;
@@ -157,7 +154,20 @@ function removeGood(Memcached $mcache) {
 
 // Добавление элемента
 
-function addIdToList(Memcached $mcache, $id) {
+function getImgName()
+{
+    $arr = array_filter(scandir(__DIR__.'/images'), function ($item) {return strlen($item) > 3;});
+    $pos = mt_rand(0, count($arr)-1);
+    $counter = 0;
+    foreach ($arr as $k => $v) {
+        if ($pos == $counter++) {
+            return Config::GOODS_IMG_PATH.$v;
+        }
+    }
+    return '';
+}
+
+function addIdToList(Memcache $mcache, $id) {
     $parts = (int)$mcache->get(Config::PRIMARY_LIST_COUNT_KEY);
     $newElem = $id;
     for ($i = 0; $i < $parts; $i++) {
@@ -174,19 +184,11 @@ function addIdToList(Memcached $mcache, $id) {
     }
 }
 
-function addGood(Memcached $mcache) {
+function addGood(Memcache $mcache) {
     $nameRandom = mt_rand(1, 10000);
     $descRandom = mt_rand(1, 10000);
     $priceRandom = mt_rand(1, 10000);
-    $imgName = Config::GOODS_IMG_PATH.implode('-', ['img', $nameRandom, $descRandom, $priceRandom]).'.png';
-
-    if (!file_exists(__DIR__.'/'.$imgName)) {
-        $height = Config::GOODS_IMG_HEIGHT;
-        $width = Config::GOODS_IMG_WIDTH;
-        $img = imagecreate($width, $height);
-        imagecolorallocate($img, mt_rand(0, 255), mt_rand(0, 255), mt_rand(0, 255));
-        imagepng($img, __DIR__.'/'.$imgName);
-    }
+    $imgName = getImgName();
 
     $item = [
         'name' => "name$nameRandom",

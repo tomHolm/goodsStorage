@@ -9,7 +9,11 @@ class Config
 
     const MCACHED_HOST = 'localhost';
     const MCACHED_PORT = 11211;
-    const MCACHED_TTL = 600;
+
+    const PRIMARY_LIST_KEY = 'pList';
+    const PRIMARY_LIST_COUNT_KEY = 'listCount';
+    const ITEMS_COUNT_KEY = 'totalCount';
+    const PRIMARY_ID_PART_SIZE = 40000;
 
     const PAGE_SIZE = 20;
 

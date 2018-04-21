@@ -4,12 +4,25 @@ var app = new Vue({
         apiUrl: window.location.protocol+"//"+window.location.host+"/storage.php", // адрес API
         currentPage: 1,
         pagesCount: 1,
-        goods: []
+        loading: true,
+        goods: [],
+        dev: false
     },
     methods: {
-        executeCommand: function (command, page) {
+        executeCacheCommand: function (command) {
+            this.loading = true;
             var request = new XMLHttpRequest();
-            request.open("GET", this.apiUrl+"?command="+command+"&page="+page, true);
+            request.open("GET", this.apiUrl+"?command="+command);
+            request.onreadystatechange = function () {
+                if (this.readyState === 4 && this.status === 200) {
+                    app.loadGoods(1);
+                }
+            };
+            request.send();
+        },
+        executeGoodsCommand: function (command, page) {
+            var request = new XMLHttpRequest();
+            request.open("GET", this.apiUrl+"?command="+command+"&page="+page);
             request.onreadystatechange = function () {
                 if (this.readyState === 4 && this.status === 200) {
                     var response = JSON.parse(this.responseText);
@@ -19,19 +32,29 @@ var app = new Vue({
                         app.goods = response.goods;
                         app.currentPage = response.page;
                         app.pagesCount = response.pagesCount;
+                        if (app.goods.length > 0) {
+                            app.loading = false;
+                        }
                     }
                 }
             };
+            this.loading = true;
             request.send();
         },
         loadGoods: function (page) {
-            this.executeCommand('getitems', page);
+            this.executeGoodsCommand('getitems', page);
         },
         addGood: function () {
-            this.executeCommand('add', this.currentPage);
+            this.executeGoodsCommand('add', this.currentPage);
         },
         removeGood: function () {
-            this.executeCommand('remove', this.currentPage);
+            this.executeGoodsCommand('remove', this.currentPage);
+        },
+        init: function () {
+            this.executeCacheCommand('init');
+        },
+        flush: function () {
+            this.executeCacheCommand('flush')
         }
     },
     mounted: function () {

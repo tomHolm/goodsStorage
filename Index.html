@@ -12,35 +12,39 @@
         <h2>Список товаров</h2>
     </div>
     <div style="width:60%; margin-left:20%; margin-right:20%;">
-    <div>
-        <button v-on:click="addGood" class="btn btn-default mt-1 mb-1 mr-1">Создать товар</button>
-        <button v-on:click="removeGood" class="btn btn-default" v-bind:disabled="goods.length == 0">Удалить товар</button>
-    </div>
-    <div v-if="goods.length > 0">
-        <table class="table table-hover">
-            <thead class="thead-light">
-                <tr>
-                    <th scope="col">Image</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Description</th>
-                    <th scope="col">Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="item in goods">
-                    <td><img v-bind:src="item.image_url" class="figure-img img-fluid rounded"/></td>
-                    <td class="align-middle">{{item.name}}</td>
-                    <td class="align-middle">{{item.description}}</td>
-                    <td class="align-middle">{{item.price}}</td>
-                </tr>
-            </tbody>
-        </table>
-        <div id="navdiv" class="d-flex justify-content-center">
-            <button id="prvBtn" v-bind:disabled="currentPage <= 1" v-on:click="loadGoods(Number(currentPage)-1)" class="btn btn-default"> <b> < </b> </button>
-            <span style="margin: 10px;">Страница {{currentPage}} из {{pagesCount}}</span>
-            <button id="nxtBtn" v-bind:disabled="currentPage >= pagesCount" v-on:click="loadGoods(Number(currentPage)+1)" class="btn btn-default"> <b> > </b> </button>
+        <div v-bind:hidden="!dev">
+            <button v-on:click="init" class="btn btn-default">Init</button>
+            <button v-on:click="flush" class="btn btn-default">Flush</button>
         </div>
-    </div>
+        <div>
+            <button v-on:click="addGood" class="btn btn-default mt-1 mb-1 mr-1" v-bind:disabled="loading">Создать товар</button>
+            <button v-on:click="removeGood" class="btn btn-default" v-bind:disabled="goods.length == 0 || loading">Удалить товар</button>
+        </div>
+        <div v-if="goods.length > 0">
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Image</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="item in goods">
+                        <td><img v-bind:src="item.image_url" class="figure-img img-fluid rounded"/></td>
+                        <td class="align-middle">{{item.name}}</td>
+                        <td class="align-middle">{{item.description}}</td>
+                        <td class="align-middle">{{item.price}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div id="navdiv" class="d-flex justify-content-center">
+                <button id="prvBtn" v-bind:disabled="currentPage <= 1" v-on:click="loadGoods(Number(currentPage)-1)" class="btn btn-default"> <b> < </b> </button>
+                <span style="margin: 10px;">Страница {{currentPage}} из {{pagesCount}}</span>
+                <button id="nxtBtn" v-bind:disabled="currentPage >= pagesCount" v-on:click="loadGoods(Number(currentPage)+1)" class="btn btn-default"> <b> > </b> </button>
+            </div>
+        </div>
     </div>
 </div>
 <script src="app.js"></script>
